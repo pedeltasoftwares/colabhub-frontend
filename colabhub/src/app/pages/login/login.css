@@ -1,0 +1,107 @@
+/* Fuente global */
+.login-card {
+  font-family: 'Inter', sans-serif;
+}
+
+.logo {
+  width: 250px;          /* tamaño fijo para que no se desborde */
+  height: auto;          /* mantiene proporción */
+  margin-bottom: 1rem;   /* espacio debajo del logo */
+  display: block;
+  margin-left: auto;     /* centra horizontalmente */
+  margin-right: auto;    /* centra horizontalmente */
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f6fa; /* gris claro, más elegante */
+}
+
+.login-card {
+  width: 380px;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  background-color: #fff;
+  text-align: center;
+}
+
+h2 {
+  color: #026C7E;
+  margin-bottom: 0.3rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+p {
+  margin-bottom: 2rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.form-group {
+  text-align: left;
+  margin-bottom: 1.2rem;
+}
+
+label {
+  font-size: 0.85rem;
+  color: #444;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: #026C7E;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(2,108,126,0.1);
+}
+
+button {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #026C7E;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #014f5a;
+}
+
+.forgot {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #026C7E;
+  text-decoration: none;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
