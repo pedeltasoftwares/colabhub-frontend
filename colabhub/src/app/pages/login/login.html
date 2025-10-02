@@ -18,14 +18,13 @@
         <input id="password" type="password" [(ngModel)]="password" name="password" placeholder="Contraseña" required />
       </div>
 
-      <button type="submit">Iniciar Sesión</button>
+      <button type="submit">Iniciar sesión</button>
     </form>
 
     <!-- Mensaje de error -->
-    <p *ngIf="error" class="error-message">{{ error }}</p>
+    <p *ngIf="error" id="mensaje_error">{{ error }}</p>
 
-
-    <a href="#" class="forgot">¿Olvidaste tu contraseña?</a>
+    <a (click)="goToResetPassword()" class="forgot" style="cursor: pointer;">¿Olvidaste tu contraseña?</a>
   </div>
 </div>
 s

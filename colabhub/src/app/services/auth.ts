@@ -18,7 +18,6 @@ export class AuthService {
 
     const body = {username,password};
     return this.http.post(`${this.apiUrl}/login`,body);
-
   }
 
   logout() {
