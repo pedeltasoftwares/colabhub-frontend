@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { LoginResponse } from '../models/auth.model';
+import { StorageService } from './storage';
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +14,21 @@ export class AuthService {
   //Ruta del back
   private apiUrl = `${environment.apiUrl}/auth`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient,
+    private storageService: StorageService
+  ) {}
 
   //Login
-  login(username: string, password: string): Observable<any> {
+  login(username: string, password: string): Observable<LoginResponse> {
 
     const body = {username,password};
-    return this.http.post(`${this.apiUrl}/login`,body);
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, body).pipe(
+      tap(response => {
+        // Se guarda automáticamente el token y el usuario
+        this.storageService.saveToken(response.access_token);
+        this.storageService.saveUser(response.user);
+      })
+    );
   }
 
   //Set password
@@ -29,25 +39,22 @@ export class AuthService {
   }
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    this.storageService.clear();
   }
 
   getUser() {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    return this.storageService.getUser();
   }
 
   getRole(): string | null {
-    const user = this.getUser();
-    return user ? user.role : null;
+    return this.storageService.getUserRole();
   }
 
   getToken() {
-    return localStorage.getItem('token');
+    return this.storageService.getToken();
   }
 
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    return this.storageService.isLoggedIn();
   }
 }

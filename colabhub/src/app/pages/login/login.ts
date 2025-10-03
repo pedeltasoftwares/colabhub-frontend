@@ -21,10 +21,12 @@ export class LoginComponent {
 
   constructor(private authService: AuthService, private router: Router) {}
 
+  //Muestra la contraseña
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
 
+  //Inicia sesión. Petición al backend
   onSubmit() {
 
     if (!this.username || !this.password) {
@@ -36,22 +38,35 @@ export class LoginComponent {
     this.error = null;
 
     this.authService.login(this.username, this.password).subscribe({
-      next: (res) => {
+      next: (response) => {
+
         //TODO: Debug
-        console.log('Respuesta del backend:', res);
+        console.log('Respuesta del backend:', response);
+        
+        // Extraemos el rol del usuario
+        const userRole = response.user.role;
+
+        // Redirigesegún el rol
+        if (userRole === 'admin') {
+          this.router.navigate(['/admin-dashboard']);
+        } else if (userRole === 'pmo_reader'){
+          this.router.navigate(['/pmo-dashboard']);
+        }else{
+          this.router.navigate(['/pmo-dashboard']);
+        }
+
         this.isLoading = false;
-        //Se navega otra pagina
       },
       error: (err) => {
         this.error = err.error.message || 'Error al iniciar sesión.';
         this.isLoading = false;
         //TODO: Debug
         console.error('Error del backend:', err);
-
       }
     });
   }
 
+  //Navega a la pagina de resetear contraseña
   goToResetPassword() {
     if (this.username) {
       this.router.navigate(['/set-password'], { 
@@ -61,7 +76,4 @@ export class LoginComponent {
       this.error = 'Ingresa tu usuario primero';
     }
   }
-
-
-
 }
