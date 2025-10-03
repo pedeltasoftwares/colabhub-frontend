@@ -1,0 +1,32 @@
+export interface ColaboradorActivo {
+  ID: number;
+  TipoID: number;
+  PrimerNombre: string;
+  SegundoNombre: string | null;
+  PrimerApellido: string;
+  SegundoApellido: string | null;
+  Email: string;
+  FechaIngreso: string;
+  Cargo: number;
+  Area: number;
+  FechaNacimiento: string;
+  Edad: number;
+  Genero: number;
+  DireccionResidencia: string;
+  ARL: number;
+  EPS: number;
+  AFP: number;
+  ACCAI: number;
+  Cesantias: number;
+  CajaCompensacion: number;
+  Celular: string;
+  RH: number;
+  ContactoEmergencia: string;
+  CelularContactoEmergencia: string;
+  IdSede: number;
+  IDPaisNac: string;
+  IDCiudadNac: string;
+  IDEstadoNac: string;
+  UltimoExamenOcupacional: string | null;
+  Perfil: number;
+}

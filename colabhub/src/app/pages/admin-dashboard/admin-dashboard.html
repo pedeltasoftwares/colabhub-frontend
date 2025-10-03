@@ -1,1 +1,165 @@
-<p>admin-dashboard works!</p>
+<div class="dashboard-container">
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <!-- Logo (solo texto) -->
+    <div class="sidebar-header">
+      <h1 class="logo">ColabHub</h1>
+      <p class="logo-subtitle">Gestión de colaboradores</p>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active">
+        <span class="nav-icon">👥</span>
+        <span>Colaboradores activos</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">🏢</span>
+        <span>Colaboradores retirados</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">🪜</span>
+        <span>Seguimiento curso alturas</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">📚</span>
+        <span>Catálogos</span>
+      </a>
+    </nav>
+
+    <!-- User Profile at bottom -->
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <img src="https://via.placeholder.com/40" alt="User" class="user-avatar">
+        <div class="user-info">
+          <p class="user-name">Admin User</p>
+          <p class="user-role">Perfil de administrador</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- TOP HEADER -->
+    <header class="top-header">
+        <div class="header-left">
+            <h1 class="greeting">Hola, Admin User</h1>
+            <p class="subgreeting">Bienvenido/a</p>
+        </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <main class="content-area">
+        <div class="content-header">
+        <h2 class="section-title">Colaboradores activos</h2>
+        <p class="section-subtitle">Gestiona el estado y la información de tus colaboradores</p>
+        </div>
+
+        <!-- FILTRO DE BÚSQUEDA -->
+        <div class="search-box">
+            <input 
+                type="text" 
+                [(ngModel)]="filtroId" 
+                placeholder="Buscar por ID del colaborador"
+                class="search-input"
+                (keyup.enter)="buscarPorId()">
+            <button (click)="buscarPorId()" class="btn-search">Buscar</button>
+            <button (click)="limpiarFiltro()" class="btn-clear">Limpiar</button>
+        </div>
+
+        <!-- MENSAJE DE ERROR -->
+        <div *ngIf="error" class="error-message">
+            {{ error }}
+        </div>
+
+        <!-- LOADING -->
+        <div *ngIf="isLoading" class="loading-message">
+            Cargando colaboradores...
+        </div>
+
+      <!-- TABLE -->
+      <div *ngIf="!isLoading && !error" class="table-container">
+        <table class="collaborators-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tipo ID</th>
+              <th>Primer Nombre</th>
+              <th>Segundo Nombre</th>
+              <th>Primer Apellido</th>
+              <th>Segundo Apellido</th>
+              <th>Email</th>
+              <th>Fecha Ingreso</th>
+              <th>Cargo</th>
+              <th>Área</th>
+              <th>Perfil</th>
+              <th>Sede</th>
+              <th>Último Examen</th>
+              <th>Fecha Nacimiento</th>
+              <th>Edad</th>
+              <th>Género</th>
+              <th>País Nacimiento</th>
+              <th>Estado Nacimiento</th>
+              <th>Ciudad Nacimiento</th>
+              <th>Dirección de Residencia</th>
+              <th>ARL</th>
+              <th>EPS</th>
+              <th>AFP</th>
+              <th>ACCAI</th>
+              <th>Cesantías</th>
+              <th>Caja Compensación</th>
+              <th>Celular</th>
+              <th>RH</th>
+              <th>Contacto Emergencia</th>
+              <th>Celular Contacto de Emergencia</th>
+              <th>Editar</th>
+              <th>Retirar</th>
+              <th>Curso de alturas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let colaborador of colaboradores">
+              <td>{{ colaborador.ID }}</td>
+              <td>{{ getNombreTipoID(colaborador.TipoID) }}</td>
+              <td>{{ colaborador.PrimerNombre }}</td>
+              <td>{{ colaborador.SegundoNombre  }}</td>
+              <td>{{ colaborador.PrimerApellido }}</td>
+              <td>{{ colaborador.SegundoApellido }}</td>
+              <td>{{ colaborador.Email }}</td>
+              <td>{{ colaborador.FechaIngreso }}</td>
+              <td>{{ getNombreCargo(colaborador.Cargo) }}</td>
+              <td>{{ getNombreArea(colaborador.Area) }}</td>
+              <td>{{ getNombrePerfil(colaborador.Perfil) }}</td>
+              <td>{{ getNombreSede(colaborador.IdSede) }}</td>
+              <td>{{ colaborador.UltimoExamenOcupacional}}</td>
+              <td>{{ colaborador.FechaNacimiento }}</td>
+              <td>{{ colaborador.Edad }}</td>
+              <td>{{ getNombreGenero(colaborador.Genero) }}</td>
+              <td>{{ getNombrePais(colaborador.IDPaisNac) }}</td>
+              <td>{{ getNombreEstado(colaborador.IDEstadoNac) }}</td>
+              <td>{{ getNombreCiudad(colaborador.IDCiudadNac) }}</td>
+              <td>{{ colaborador.DireccionResidencia }}</td>
+              <td>{{ getNombreARL(colaborador.ARL) }}</td>
+              <td>{{ getNombreEPS(colaborador.EPS) }}</td>
+              <td>{{ getNombreAFP(colaborador.AFP) }}</td>
+              <td>{{ getNombreACCAI(colaborador.ACCAI) }}</td>
+              <td>{{ getNombreCesantias(colaborador.Cesantias) }}</td>
+              <td>{{ getNombreCajaCompensacion(colaborador.CajaCompensacion) }}</td>
+              <td>{{ colaborador.Celular }}</td>
+              <td>{{ getNombreRH(colaborador.RH) }}</td>
+              <td>{{ colaborador.ContactoEmergencia }}</td>
+              <td>{{ colaborador.CelularContactoEmergencia }}</td>
+              <td><a href="#" class="action-link">✏️</a></td>
+              <td><a href="#" class="action-link">🗑️</a></td>
+              <td><a href="#" class="action-link">✅</a></td>
+            </tr>
+            <tr *ngIf="colaboradores.length === 0">
+              <td colspan="31" class="no-data">No se encontraron colaboradores</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>

@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { Auth } from './auth.service';
+import { ColaboradorActivo } from './colaboradores-activos.service';
 
-describe('Auth', () => {
-  let service: Auth;
+describe('Colaboradores', () => {
+  let service: ColaboradorActivo;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(Auth);
+    service = TestBed.inject(ColaboradorActivo);
   });
 
   it('should be created', () => {
