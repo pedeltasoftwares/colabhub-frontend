@@ -30,12 +30,12 @@
     <!-- User Profile at bottom -->
     <div class="sidebar-footer">
       <div class="user-profile">
-        <img src="https://via.placeholder.com/40" alt="User" class="user-avatar">
+        <img src="https://ui-avatars.com/api/?name=Admin&background=3498db&color=fff&size=128" alt="User" class="user-avatar">
         <div class="user-info">
-          <p class="user-name">Admin User</p>
-          <p class="user-role">Perfil de administrador</p>
+            <p class="user-name">{{ currentUser?.full_name || 'Usuario' }}</p>
+            <p class="user-role">{{ currentUser?.role === 'admin' ? 'Perfil de administrador' : 'Usuario' }}</p>
         </div>
-      </div>
+        </div>
     </div>
   </aside>
 
@@ -44,7 +44,7 @@
     <!-- TOP HEADER -->
     <header class="top-header">
         <div class="header-left">
-            <h1 class="greeting">Hola, Admin User</h1>
+            <h1 class="greeting">Hola, {{ currentUser?.full_name || 'Usuario' }}</h1>
             <p class="subgreeting">Bienvenido/a</p>
         </div>
     </header>

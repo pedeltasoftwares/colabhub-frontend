@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ColaboradoresActivosService } from '../../services/colaboradores-activos.service';
 import { ColaboradorActivo } from '../../models/colaboradores-activos.models';
 import { CatalogosService } from '../../services/catalogos.service';
+import { StorageService } from '../../services/storage';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -22,10 +23,18 @@ export class AdminDashboard implements OnInit {
   //Catalogos
   catalogos: any = {}
 
-  constructor(private colaboradoresService: ColaboradoresActivosService,
-              private catalogosService: CatalogosService) {}
+  // Usuario logueado
+  currentUser: any = null;
+
+  constructor(
+    private colaboradoresService: ColaboradoresActivosService,
+    private catalogosService: CatalogosService,
+    private storageService: StorageService  
+  ) {}
 
   ngOnInit() {
+    this.currentUser = this.storageService.getUser();
+    console.log('Usuario actual:', this.currentUser);
     this.cargarCatalogos();
   }
 
@@ -168,15 +177,15 @@ export class AdminDashboard implements OnInit {
     return catalogo?.Perfil || id.toString();
   }
 
-  getNombreEstado(codigoISO: string | null): string {
-  if (!codigoISO) return '-';
-  const catalogo = this.catalogos.estados?.find((item: any) => item.CodigoISO === codigoISO);
-  return catalogo?.Nombre || codigoISO;
-}
+    getNombreEstado(codigoISO: string | null): string {
+    if (!codigoISO) return '-';
+    const catalogo = this.catalogos.estados?.find((item: any) => item.CodigoISO === codigoISO);
+    return catalogo?.Nombre || codigoISO;
+  }
 
-getNombreCiudad(codigoMunicipal: string | null): string {
-  if (!codigoMunicipal) return '-';
-  const catalogo = this.catalogos.ciudades?.find((item: any) => item.CodigoMunicipalNacional === codigoMunicipal);
-  return catalogo?.Nombre || codigoMunicipal;
-}
+  getNombreCiudad(codigoMunicipal: string | null): string {
+    if (!codigoMunicipal) return '-';
+    const catalogo = this.catalogos.ciudades?.find((item: any) => item.CodigoMunicipalNacional === codigoMunicipal);
+    return catalogo?.Nombre || codigoMunicipal;
+  }
 }
