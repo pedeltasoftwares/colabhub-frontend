@@ -12,11 +12,18 @@ import { RouterLink, Router} from '@angular/router';
   imports: [FormsModule, CommonModule,RouterLink]
 })
 export class LoginComponent {
+
   username: string = '';
   password: string = '';
   error: string | null = null;
+  showPassword: boolean = false;
+  isLoading: boolean = false;
 
   constructor(private authService: AuthService, private router: Router) {}
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   onSubmit() {
 
@@ -25,14 +32,22 @@ export class LoginComponent {
       return;
     }
 
-    console.log('Mandando al backend:', this.username, this.password);
+    this.isLoading = true;
+    this.error = null;
+
     this.authService.login(this.username, this.password).subscribe({
       next: (res) => {
+        //TODO: Debug
         console.log('Respuesta del backend:', res);
+        this.isLoading = false;
+        //Se navega otra pagina
       },
       error: (err) => {
-        this.error = err.error.message;
+        this.error = err.error.message || 'Error al iniciar sesión.';
+        this.isLoading = false;
+        //TODO: Debug
         console.error('Error del backend:', err);
+
       }
     });
   }
@@ -43,7 +58,7 @@ export class LoginComponent {
         queryParams: { username: this.username } 
       });
     } else {
-      this.error = 'Ingresa tu usuario.';
+      this.error = 'Ingresa tu usuario primero';
     }
   }
 

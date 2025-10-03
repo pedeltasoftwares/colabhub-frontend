@@ -81,11 +81,34 @@ button {
   border-radius: 8px;
   cursor: pointer;
   margin-top: 0.5rem;
-  transition: background 0.2s ease-in-out;
+  transition: all 0.3s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background-color: #014f5a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(2, 108, 126, 0.3);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+button.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(2, 108, 126, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(2, 108, 126, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(2, 108, 126, 0);
+  }
 }
 
 .forgot {
@@ -102,6 +125,42 @@ button:hover {
 
 #mensaje_error {
   color: red;
-  margin-top: 25px;
+  background-color: #fef2f2; /* fondo rojo claro */
+  border: 1px solid #fecaca;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 1rem;
   font-size: 0.9rem;
+  text-align: center;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: color 0.2s;
+  user-select: none;
+}
+
+.eye-icon:hover {
+  color: #026C7E;
+}
+
+.eye-icon svg {
+  display: block;
 }

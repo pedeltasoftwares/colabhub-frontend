@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
+
 export class AuthService {
 
   //Ruta del back
@@ -18,6 +19,13 @@ export class AuthService {
 
     const body = {username,password};
     return this.http.post(`${this.apiUrl}/login`,body);
+  }
+
+  //Set password
+  set_password(username: string, password:string): Observable<any> {
+
+    const body = {username,password};
+    return this.http.post(`${this.apiUrl}/set-password`,body);
   }
 
   logout() {
