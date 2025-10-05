@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit , ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ColaboradoresActivosService } from '../../services/colaboradores-activos.service';
@@ -18,7 +18,8 @@ export class AdminDashboard implements OnInit {
   colaboradores: ColaboradorActivo[] = [];
   filtroId: string = '';
   isLoading: boolean = false;
-  error: string | null = null;
+  error: string | null = null;  
+  errorModal: string | null = null;  
 
   //Catalogos
   catalogos: any = {}
@@ -26,10 +27,19 @@ export class AdminDashboard implements OnInit {
   // Usuario logueado
   currentUser: any = null;
 
+  //Modal nuevo colaborador
+  mostrarModal: boolean = false;
+  nuevoColaborador: any = {};
+
+  // Listas filtradas para cascada
+  estadosFiltrados: any[] = [];
+  ciudadesFiltradas: any[] = [];
+
   constructor(
     private colaboradoresService: ColaboradoresActivosService,
     private catalogosService: CatalogosService,
-    private storageService: StorageService  
+    private storageService: StorageService,
+    private cdr: ChangeDetectorRef 
   ) {}
 
   ngOnInit() {
@@ -188,4 +198,222 @@ export class AdminDashboard implements OnInit {
     const catalogo = this.catalogos.ciudades?.find((item: any) => item.CodigoMunicipalNacional === codigoMunicipal);
     return catalogo?.Nombre || codigoMunicipal;
   }
+
+  abrirFormularioNuevoColaborador() {
+    this.mostrarModal = true;
+    this.nuevoColaborador = {
+      ID: '',
+      TipoID: null,  // MANTENER null
+      PrimerNombre: '',
+      SegundoNombre: '',
+      PrimerApellido: '',
+      SegundoApellido: '',
+      Email: '',
+      FechaIngreso: '',
+      Cargo: null,  // MANTENER null
+      Area: null,
+      Perfil: null,
+      IdSede: null,
+      UltimoExamenOcupacional: '',
+      FechaNacimiento: '',
+      Edad: null,
+      Genero: null,
+      IDPaisNac: '',
+      IDEstadoNac: '',
+      IDCiudadNac: '',
+      DireccionResidencia: '',
+      ARL: null,
+      EPS: null,
+      AFP: null,
+      ACCAI: null,
+      Cesantias: null,
+      CajaCompensacion: null,
+      Celular: '',
+      RH: null,
+      ContactoEmergencia: '',
+      CelularContactoEmergencia: ''
+    };
+  }
+
+  cerrarModal() {
+    this.mostrarModal = false;
+    this.nuevoColaborador = {};
+    this.errorModal = null;  
+    this.estadosFiltrados = [];
+    this.ciudadesFiltradas = [];
+  }
+
+  validarFormato(): string | null {
+
+    // Validar ID - solo números
+    const regexNumeros = /^\d+$/;
+    if (this.nuevoColaborador.ID && !regexNumeros.test(this.nuevoColaborador.ID)) {
+      return 'El ID debe contener solo números';
+    }
+
+    // Validar nombres y apellidos - solo letras y espacios
+    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+    
+    if (this.nuevoColaborador.PrimerNombre && !regexLetras.test(this.nuevoColaborador.PrimerNombre)) {
+      return 'El Primer Nombre debe contener solo letras';
+    }
+    
+    if (this.nuevoColaborador.SegundoNombre && !regexLetras.test(this.nuevoColaborador.SegundoNombre)) {
+      return 'El Segundo Nombre debe contener solo letras';
+    }
+    
+    if (this.nuevoColaborador.PrimerApellido && !regexLetras.test(this.nuevoColaborador.PrimerApellido)) {
+      return 'El Primer Apellido debe contener solo letras';
+    }
+    
+    if (this.nuevoColaborador.SegundoApellido && !regexLetras.test(this.nuevoColaborador.SegundoApellido)) {
+      return 'El Segundo Apellido debe contener solo letras';
+    }
+
+    // Validar Email
+    const regexEmail = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (this.nuevoColaborador.Email && !regexEmail.test(this.nuevoColaborador.Email)) {
+      return 'El Email no tiene un formato válido';
+    }
+
+    if (this.nuevoColaborador.ContactoEmergencia && !regexLetras.test(this.nuevoColaborador.ContactoEmergencia)) {
+      return 'El contacto de emergencia debe contener solo letras';
+    }
+
+    // Validar Celular - solo números
+    if (this.nuevoColaborador.Celular && !regexNumeros.test(this.nuevoColaborador.Celular)) {
+      return 'El Celular debe contener solo números';
+    }
+
+    // Validar Celular Contacto Emergencia - solo números
+    if (this.nuevoColaborador.CelularContactoEmergencia && 
+        !regexNumeros.test(this.nuevoColaborador.CelularContactoEmergencia)) {
+      return 'El Celular de Contacto de Emergencia debe contener solo números';
+    }
+
+    return null; // Todo válido
+  }
+
+  guardarColaborador() {
+
+    // PRIMERO: Validar formatos
+    const errorFormato = this.validarFormato();
+    if (errorFormato) {
+      this.errorModal = errorFormato;
+      this.cdr.detectChanges();
+      
+      const modalBody = document.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+      
+      return;
+    }
+
+    // Validar campos obligatorios
+    const camposObligatorios = [
+      { campo: 'ID', nombre: 'ID' },
+      { campo: 'TipoID', nombre: 'Tipo ID' },
+      { campo: 'PrimerNombre', nombre: 'Primer Nombre' },
+      { campo: 'PrimerApellido', nombre: 'Primer Apellido' },
+      { campo: 'Email', nombre: 'Email' },
+      { campo: 'FechaNacimiento', nombre: 'Fecha de Nacimiento' },
+      { campo: 'Genero', nombre: 'Género' },
+      { campo: 'RH', nombre: 'RH' },
+      { campo: 'IDPaisNac', nombre: 'País de Nacimiento' },
+      { campo: 'IDEstadoNac', nombre: 'Estado/Departamento de Nacimiento' },
+      { campo: 'IDCiudadNac', nombre: 'Ciudad de Nacimiento' },
+      { campo: 'DireccionResidencia', nombre: 'Dirección de Residencia' },
+      { campo: 'FechaIngreso', nombre: 'Fecha de Ingreso' },
+      { campo: 'Cargo', nombre: 'Cargo' },
+      { campo: 'Area', nombre: 'Área' },
+      { campo: 'IdSede', nombre: 'Sede' },
+      { campo: 'ARL', nombre: 'ARL' },
+      { campo: 'EPS', nombre: 'EPS' },
+      { campo: 'AFP', nombre: 'AFP' },
+      { campo: 'Cesantias', nombre: 'Cesantías' },
+      { campo: 'CajaCompensacion', nombre: 'Caja de Compensación' }
+    ];
+
+    // Verificar si hay campos vacíos
+    const camposVacios = camposObligatorios.filter(item => 
+      this.nuevoColaborador[item.campo] === null || 
+      this.nuevoColaborador[item.campo] === '' || 
+      this.nuevoColaborador[item.campo] === undefined
+    );
+
+    if (camposVacios.length > 0) {
+      const listaCampos = camposVacios.map(item => item.nombre).join(', ');
+      this.errorModal = `Por favor complete los siguientes campos obligatorios: ${listaCampos}`;
+      
+      this.cdr.detectChanges(); 
+      
+      // Scroll al inicio del modal para ver el error
+      const modalBody = document.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+      
+      return;
+    }
+
+    console.log('Datos válidos, listo para enviar al backend');
+    this.cerrarModal();
+  }
+
+
+  onPaisChange() {
+
+    // Limpiar selecciones dependientes
+    this.nuevoColaborador.IDEstadoNac = '';
+    this.nuevoColaborador.IDCiudadNac = '';
+    this.ciudadesFiltradas = [];
+    
+    // Filtrar estados por país seleccionado
+    if (this.nuevoColaborador.IDPaisNac) {
+      this.estadosFiltrados = this.catalogos.estados?.filter(
+        (estado: any) => estado.ISO2 === this.nuevoColaborador.IDPaisNac
+      ) || [];
+    } else {
+      this.estadosFiltrados = [];
+    }
+  }
+
+  onEstadoChange() {
+    // Limpiar selección dependiente
+    this.nuevoColaborador.IDCiudadNac = '';
+    
+    // Filtrar ciudades por estado seleccionado
+    if (this.nuevoColaborador.IDEstadoNac) {
+      this.ciudadesFiltradas = this.catalogos.ciudades?.filter(
+        (ciudad: any) => ciudad.CodigoISOEstado === this.nuevoColaborador.IDEstadoNac
+      ) || [];
+      
+      console.log('Estado seleccionado:', this.nuevoColaborador.IDEstadoNac);
+      console.log('Ciudades filtradas:', this.ciudadesFiltradas);
+    } else {
+      this.ciudadesFiltradas = [];
+    }
+  }
+
+  calcularEdad() {
+    if (!this.nuevoColaborador.FechaNacimiento) {
+      this.nuevoColaborador.Edad = null;
+      return;
+    }
+
+    const fechaNacimiento = new Date(this.nuevoColaborador.FechaNacimiento);
+    const hoy = new Date();
+    
+    let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+    const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+    
+    // Si aún no ha cumplido años este año, restar 1
+    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+      edad--;
+    }
+    
+    this.nuevoColaborador.Edad = edad;
+  }
+
 }

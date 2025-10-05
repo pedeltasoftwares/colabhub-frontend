@@ -24,4 +24,10 @@ export class ColaboradoresActivosService {
 
     return this.http.get<ColaboradorActivo[]>(this.apiUrl, { params });
   }
+
+  // Crear nuevo colaborador activo
+  crearColaborador(colaborador: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/create`, colaborador);
+  }
+
 }
