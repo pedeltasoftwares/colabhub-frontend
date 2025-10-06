@@ -24,7 +24,7 @@ export class AdminDashboard implements OnInit {
   errorModal: string | null = null;  
   mensajeExito: string | null = null; 
   modoSeleccion: boolean = false;
-  colaboradoresSeleccionados: Set<number> = new Set();
+  colaboradoresSeleccionados: Map<number, ColaboradorActivo> = new Map();
 
   //Catalogos
   catalogos: any = {}
@@ -495,10 +495,8 @@ export class AdminDashboard implements OnInit {
 
   toggleModoSeleccion() {
     if (this.modoSeleccion && this.colaboradoresSeleccionados.size > 0) {
-      // Si ya está en modo selección y hay colaboradores seleccionados, exportar
       this.exportarAExcel();
     } else {
-      // Si no, activar modo selección
       this.modoSeleccion = !this.modoSeleccion;
       if (!this.modoSeleccion) {
         this.colaboradoresSeleccionados.clear();
@@ -510,17 +508,25 @@ export class AdminDashboard implements OnInit {
     if (this.colaboradoresSeleccionados.has(id)) {
       this.colaboradoresSeleccionados.delete(id);
     } else {
-      this.colaboradoresSeleccionados.add(id);
+      // Guardar el objeto completo
+      const colaborador = this.colaboradores.find(col => col.ID === id);
+      if (colaborador) {
+        this.colaboradoresSeleccionados.set(id, colaborador);
+      }
     }
   }
 
   toggleTodos(event: any) {
     if (event.target.checked) {
-      // Seleccionar todos
-      this.colaboradores.forEach(col => this.colaboradoresSeleccionados.add(col.ID));
+      // Seleccionar todos los visibles
+      this.colaboradores.forEach(col => {
+        this.colaboradoresSeleccionados.set(col.ID, col);
+      });
     } else {
-      // Deseleccionar todos
-      this.colaboradoresSeleccionados.clear();
+      // Deseleccionar solo los visibles
+      this.colaboradores.forEach(col => {
+        this.colaboradoresSeleccionados.delete(col.ID);
+      });
     }
   }
 
@@ -533,16 +539,20 @@ export class AdminDashboard implements OnInit {
     this.colaboradoresSeleccionados.clear();
   }
 
-  exportarAExcel() {
-    // Filtrar solo los colaboradores seleccionados
-    const colaboradoresAExportar = this.colaboradores.filter(col => 
+  getColaboradoresSeleccionadosVisibles(): number {
+    return this.colaboradores.filter(col => 
       this.colaboradoresSeleccionados.has(col.ID)
-    );
+    ).length;
+  }
 
-    if (colaboradoresAExportar.length === 0) {
+  exportarAExcel() {
+    if (this.colaboradoresSeleccionados.size === 0) {
       alert('Por favor seleccione al menos un colaborador para exportar');
       return;
     }
+
+    // ✅ CAMBIO CLAVE: Usar Array.from para obtener los valores del Map
+    const colaboradoresAExportar = Array.from(this.colaboradoresSeleccionados.values());
 
     // Preparar datos para Excel con nombres legibles
     const datosExcel = colaboradoresAExportar.map(col => ({
@@ -583,18 +593,6 @@ export class AdminDashboard implements OnInit {
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
 
-    // Ajustar ancho de columnas
-    const colWidths = [
-      { wch: 12 }, // ID
-      { wch: 25 }, // Tipo ID
-      { wch: 20 }, // Primer Nombre
-      { wch: 20 }, // Segundo Nombre
-      { wch: 20 }, // Primer Apellido
-      { wch: 20 }, // Segundo Apellido
-      { wch: 30 }, // Email
-    ];
-    ws['!cols'] = colWidths;
-
     // Generar nombre del archivo con fecha
     const fecha = new Date().toISOString().split('T')[0];
     const nombreArchivo = `Colaboradores_${fecha}.xlsx`;
@@ -608,5 +606,5 @@ export class AdminDashboard implements OnInit {
 
     alert(`Reporte generado exitosamente: ${colaboradoresAExportar.length} colaboradores exportados`);
   }
-
 }
+
