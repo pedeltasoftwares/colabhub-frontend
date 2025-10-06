@@ -58,22 +58,40 @@
 
         <!-- FILTRO DE BÚSQUEDA -->
         <div class="search-box">
-            <select [(ngModel)]="tipoBusqueda" class="search-type-select">
-                <option value="id">Buscar por ID</option>
-                <option value="nombre">Buscar por Nombre</option>
-            </select>
-            
-            <input 
-                type="text" 
-                [(ngModel)]="valorBusqueda" 
-                [placeholder]="tipoBusqueda === 'id' ? 'Ej: 123456' : 'Ej: AND para ANDRES'"
-                class="search-input"
-                (keyup.enter)="buscar()">
-            
-            <button (click)="buscar()" class="btn-search">Buscar</button>
-            <button (click)="limpiarFiltro()" class="btn-clear">Limpiar</button>
-            <div class="spacer"></div>
-            <button (click)="abrirFormularioNuevoColaborador()" class="btn-add">Añadir nuevo colaborador</button>
+          <select [(ngModel)]="tipoBusqueda" class="search-type-select">
+              <option value="id">Buscar por ID</option>
+              <option value="nombre">Buscar por Nombre</option>
+          </select>
+          
+          <input 
+              type="text" 
+              [(ngModel)]="valorBusqueda" 
+              [placeholder]="tipoBusqueda === 'id' ? 'Ej: 123456' : 'Ej: AND para ANDRES'"
+              class="search-input"
+              (keyup.enter)="buscar()">
+          
+          <button (click)="buscar()" class="btn-search">Buscar</button>
+          <button (click)="limpiarFiltro()" class="btn-clear">Limpiar</button>
+          <div class="spacer"></div>
+          
+          <!-- BOTÓN DE EXPORTAR -->
+          <button (click)="toggleModoSeleccion()" class="btn-export" [class.active]="modoSeleccion">
+              📊 {{ modoSeleccion ? 'Exportar seleccionados' : 'Exportar a Excel' }}
+          </button>
+
+          <button (click)="abrirFormularioNuevoColaborador()" class="btn-add">Añadir nuevo colaborador</button>
+        </div>
+
+        <!-- AGREGAR INFO DE SELECCIÓN (si está en modo selección) -->
+        <div *ngIf="modoSeleccion" class="selection-info">
+            <p>
+                <strong>{{ colaboradoresSeleccionados.size }}</strong> colaboradores seleccionados
+                <button *ngIf="colaboradoresSeleccionados.size > 0" 
+                        (click)="limpiarSeleccion()" 
+                        class="btn-clear-selection">
+                    Limpiar selección
+                </button>
+            </p>
         </div>
 
         <!-- MENSAJE DE ERROR -->
@@ -91,6 +109,13 @@
         <table class="collaborators-table">
           <thead>
             <tr>
+              <!-- COLUMNA DE CHECKBOX -->
+              <th *ngIf="modoSeleccion" class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  (change)="toggleTodos($event)"
+                  [checked]="todosSeleccionados()">
+              </th>
               <th>ID</th>
               <th>Tipo ID</th>
               <th>Primer Nombre</th>
@@ -128,6 +153,12 @@
           </thead>
           <tbody>
             <tr *ngFor="let colaborador of colaboradores">
+              <td *ngIf="modoSeleccion" class="checkbox-column">
+                <input 
+                  type="checkbox" 
+                  [checked]="colaboradoresSeleccionados.has(colaborador.ID)"
+                  (change)="toggleSeleccion(colaborador.ID)">
+              </td>
               <td>{{ colaborador.ID }}</td>
               <td>{{ getNombreTipoID(colaborador.TipoID) }}</td>
               <td>{{ colaborador.PrimerNombre }}</td>
@@ -163,7 +194,8 @@
               <td><a href="#" class="action-link">✅</a></td>
             </tr>
             <tr *ngIf="colaboradores.length === 0">
-              <td colspan="33" class="no-data">No se encontraron colaboradores</td>
+              <td [attr.colspan]="modoSeleccion ? 34 : 33" class="no-data">
+                No se encontraron colaboradores</td>
             </tr>
           </tbody>
         </table>

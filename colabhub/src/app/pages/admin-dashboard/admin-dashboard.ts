@@ -5,6 +5,7 @@ import { ColaboradoresActivosService } from '../../services/colaboradores-activo
 import { ColaboradorActivo } from '../../models/colaboradores-activos.models';
 import { CatalogosService } from '../../services/catalogos.service';
 import { StorageService } from '../../services/storage';
+import * as XLSX from 'xlsx'; //
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -22,6 +23,8 @@ export class AdminDashboard implements OnInit {
   error: string | null = null;  
   errorModal: string | null = null;  
   mensajeExito: string | null = null; 
+  modoSeleccion: boolean = false;
+  colaboradoresSeleccionados: Set<number> = new Set();
 
   //Catalogos
   catalogos: any = {}
@@ -488,6 +491,122 @@ export class AdminDashboard implements OnInit {
     }
     
     this.nuevoColaborador.Edad = edad;
+  }
+
+  toggleModoSeleccion() {
+    if (this.modoSeleccion && this.colaboradoresSeleccionados.size > 0) {
+      // Si ya está en modo selección y hay colaboradores seleccionados, exportar
+      this.exportarAExcel();
+    } else {
+      // Si no, activar modo selección
+      this.modoSeleccion = !this.modoSeleccion;
+      if (!this.modoSeleccion) {
+        this.colaboradoresSeleccionados.clear();
+      }
+    }
+  }
+
+  toggleSeleccion(id: number) {
+    if (this.colaboradoresSeleccionados.has(id)) {
+      this.colaboradoresSeleccionados.delete(id);
+    } else {
+      this.colaboradoresSeleccionados.add(id);
+    }
+  }
+
+  toggleTodos(event: any) {
+    if (event.target.checked) {
+      // Seleccionar todos
+      this.colaboradores.forEach(col => this.colaboradoresSeleccionados.add(col.ID));
+    } else {
+      // Deseleccionar todos
+      this.colaboradoresSeleccionados.clear();
+    }
+  }
+
+  todosSeleccionados(): boolean {
+    return this.colaboradores.length > 0 && 
+           this.colaboradores.every(col => this.colaboradoresSeleccionados.has(col.ID));
+  }
+
+  limpiarSeleccion() {
+    this.colaboradoresSeleccionados.clear();
+  }
+
+  exportarAExcel() {
+    // Filtrar solo los colaboradores seleccionados
+    const colaboradoresAExportar = this.colaboradores.filter(col => 
+      this.colaboradoresSeleccionados.has(col.ID)
+    );
+
+    if (colaboradoresAExportar.length === 0) {
+      alert('Por favor seleccione al menos un colaborador para exportar');
+      return;
+    }
+
+    // Preparar datos para Excel con nombres legibles
+    const datosExcel = colaboradoresAExportar.map(col => ({
+      'ID': col.ID,
+      'Tipo ID': this.getNombreTipoID(col.TipoID),
+      'Primer Nombre': col.PrimerNombre,
+      'Segundo Nombre': col.SegundoNombre || '',
+      'Primer Apellido': col.PrimerApellido,
+      'Segundo Apellido': col.SegundoApellido || '',
+      'Email': col.Email,
+      'Fecha Ingreso': col.FechaIngreso,
+      'Cargo': this.getNombreCargo(col.Cargo),
+      'Área': this.getNombreArea(col.Area),
+      'Perfil': this.getNombrePerfil(col.Perfil),
+      'Sede': this.getNombreSede(col.IdSede),
+      'Último Examen': col.UltimoExamenOcupacional || '',
+      'Fecha Nacimiento': col.FechaNacimiento,
+      'Edad': col.Edad,
+      'Género': this.getNombreGenero(col.Genero),
+      'País Nacimiento': this.getNombrePais(col.IDPaisNac),
+      'Estado Nacimiento': this.getNombreEstado(col.IDEstadoNac),
+      'Ciudad Nacimiento': this.getNombreCiudad(col.IDCiudadNac),
+      'Dirección': col.DireccionResidencia,
+      'ARL': this.getNombreARL(col.ARL),
+      'EPS': this.getNombreEPS(col.EPS),
+      'AFP': this.getNombreAFP(col.AFP),
+      'ACCAI': this.getNombreACCAI(col.ACCAI),
+      'Cesantías': this.getNombreCesantias(col.Cesantias),
+      'Caja Compensación': this.getNombreCajaCompensacion(col.CajaCompensacion),
+      'Celular': col.Celular || '',
+      'RH': this.getNombreRH(col.RH),
+      'Contacto Emergencia': col.ContactoEmergencia || '',
+      'Celular Contacto': col.CelularContactoEmergencia || ''
+    }));
+
+    // Crear libro de Excel
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(datosExcel);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
+
+    // Ajustar ancho de columnas
+    const colWidths = [
+      { wch: 12 }, // ID
+      { wch: 25 }, // Tipo ID
+      { wch: 20 }, // Primer Nombre
+      { wch: 20 }, // Segundo Nombre
+      { wch: 20 }, // Primer Apellido
+      { wch: 20 }, // Segundo Apellido
+      { wch: 30 }, // Email
+    ];
+    ws['!cols'] = colWidths;
+
+    // Generar nombre del archivo con fecha
+    const fecha = new Date().toISOString().split('T')[0];
+    const nombreArchivo = `Colaboradores_${fecha}.xlsx`;
+
+    // Descargar archivo
+    XLSX.writeFile(wb, nombreArchivo);
+
+    // Limpiar selección y salir del modo selección
+    this.colaboradoresSeleccionados.clear();
+    this.modoSeleccion = false;
+
+    alert(`Reporte generado exitosamente: ${colaboradoresAExportar.length} colaboradores exportados`);
   }
 
 }

@@ -637,3 +637,70 @@
   border: 1px solid #c3e6cb;
   font-size: 14px;
 }
+
+/* Botón de exportar */
+.btn-export {
+  padding: 10px 20px;
+  background-color: #217346;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-export:hover {
+  background-color: #1a5c37;
+}
+
+.btn-export.active {
+  background-color: #d97706;
+}
+
+.btn-export.active:hover {
+  background-color: #b45309;
+}
+
+/* Info de selección */
+.selection-info {
+  background-color: #f0f9ff;
+  border: 1px solid #38bdf8;
+  border-radius: 5px;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+}
+
+.selection-info p {
+  margin: 0;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-clear-selection {
+  padding: 5px 10px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-clear-selection:hover {
+  background-color: #dc2626;
+}
+
+/* Columna de checkbox */
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox-column input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
