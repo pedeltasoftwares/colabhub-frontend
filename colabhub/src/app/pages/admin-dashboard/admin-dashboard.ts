@@ -16,10 +16,12 @@ import { StorageService } from '../../services/storage';
 export class AdminDashboard implements OnInit {
   
   colaboradores: ColaboradorActivo[] = [];
-  filtroId: string = '';
+  tipoBusqueda: string = 'id'; 
+  valorBusqueda: string = ''; 
   isLoading: boolean = false;
   error: string | null = null;  
   errorModal: string | null = null;  
+  mensajeExito: string | null = null; 
 
   //Catalogos
   catalogos: any = {}
@@ -34,6 +36,7 @@ export class AdminDashboard implements OnInit {
   // Listas filtradas para cascada
   estadosFiltrados: any[] = [];
   ciudadesFiltradas: any[] = [];
+  
 
   constructor(
     private colaboradoresService: ColaboradoresActivosService,
@@ -68,11 +71,14 @@ export class AdminDashboard implements OnInit {
   }
 
   cargarColaboradores() {
-    this.colaboradoresService.getColaboradoresActivos(this.filtroId).subscribe({
+    // Determinar qué parámetros enviar según el tipo de búsqueda
+    const id = this.tipoBusqueda === 'id' ? this.valorBusqueda : undefined;
+    const nombre = this.tipoBusqueda === 'nombre' ? this.valorBusqueda : undefined;
+    
+    this.colaboradoresService.getColaboradoresActivos(id, nombre).subscribe({
       next: (response) => {
         console.log('Colaboradores cargados:', response);
         
-        // Ordenar alfabéticamente
         this.colaboradores = response.sort((a, b) => {
           const nombreComparacion = a.PrimerNombre.localeCompare(b.PrimerNombre);
           if (nombreComparacion === 0) {
@@ -91,13 +97,14 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  buscarPorId() {
+  buscar() {
     this.isLoading = true;
     this.cargarColaboradores();
   }
 
   limpiarFiltro() {
-    this.filtroId = '';
+    this.valorBusqueda = '';
+    this.tipoBusqueda = 'id';
     this.isLoading = true;
     this.cargarColaboradores();
   }
@@ -238,7 +245,8 @@ export class AdminDashboard implements OnInit {
   cerrarModal() {
     this.mostrarModal = false;
     this.nuevoColaborador = {};
-    this.errorModal = null;  
+    this.errorModal = null; 
+    this.mensajeExito = null;
     this.estadosFiltrados = [];
     this.ciudadesFiltradas = [];
   }
@@ -345,22 +353,88 @@ export class AdminDashboard implements OnInit {
     if (camposVacios.length > 0) {
       const listaCampos = camposVacios.map(item => item.nombre).join(', ');
       this.errorModal = `Por favor complete los siguientes campos obligatorios: ${listaCampos}`;
-      
       this.cdr.detectChanges(); 
-      
-      // Scroll al inicio del modal para ver el error
       const modalBody = document.querySelector('.modal-body');
       if (modalBody) {
         modalBody.scrollTop = 0;
       }
-      
       return;
     }
 
-    console.log('Datos válidos, listo para enviar al backend');
-    this.cerrarModal();
-  }
+    //Se preparan los datos para enviarlos al backend
+    const body = {
 
+      TipoID: Number(this.nuevoColaborador.TipoID),
+      ID: Number(this.nuevoColaborador.ID),
+      PrimerNombre: this.nuevoColaborador.PrimerNombre,
+      SegundoNombre: this.nuevoColaborador.SegundoNombre || null,
+      PrimerApellido: this.nuevoColaborador.PrimerApellido,
+      SegundoApellido: this.nuevoColaborador.SegundoApellido || null,
+      Email: this.nuevoColaborador.Email,
+      FechaNacimiento: this.nuevoColaborador.FechaNacimiento,
+      Genero: Number(this.nuevoColaborador.Genero),
+      IDPaisNac: this.nuevoColaborador.IDPaisNac,
+      IDEstadoNac: this.nuevoColaborador.IDEstadoNac,
+      IDCiudadNac: this.nuevoColaborador.IDCiudadNac,
+      DireccionResidencia: this.nuevoColaborador.DireccionResidencia,
+      FechaIngreso: this.nuevoColaborador.FechaIngreso,
+      Cargo: Number(this.nuevoColaborador.Cargo),
+      Area: Number(this.nuevoColaborador.Area),
+      Perfil: Number(this.nuevoColaborador.Perfil) || null,
+      IdSede: Number(this.nuevoColaborador.IdSede),
+      UltimoExamenOcupacional: this.nuevoColaborador.UltimoExamenOcupacional || null,
+      ARL: Number(this.nuevoColaborador.ARL),
+      EPS: Number(this.nuevoColaborador.EPS),
+      AFP: Number(this.nuevoColaborador.AFP),
+      ACCAI: Number(this.nuevoColaborador.ACCAI) || null,
+      Cesantias: Number(this.nuevoColaborador.Cesantias),
+      CajaCompensacion: Number(this.nuevoColaborador.CajaCompensacion),
+      Celular: this.nuevoColaborador.Celular || null,
+      RH: Number(this.nuevoColaborador.RH),
+      ContactoEmergencia: this.nuevoColaborador.ContactoEmergencia || null,
+      CelularContactoEmergencia: this.nuevoColaborador.CelularContactoEmergencia || null
+    }
+
+    console.log('Información del colaborador enviada al back:',body)
+
+    //Se envian los datos al backend
+    this.isLoading = true;
+    this.errorModal = null;
+    this.mensajeExito = null;
+    this.colaboradoresService.crearColaborador(body).subscribe({
+      next: (response) => {
+        console.log('Colaborador creado exitosamente:', response);
+        this.isLoading = false;
+        //Mostrar mensaje del back
+        this.mensajeExito = response.message || 'Colaborador guardado exitosamente';
+        this.cdr.detectChanges();
+
+        setTimeout(() => {
+          this.cerrarModal();
+          this.cargarColaboradores(); 
+        }, 2000);
+      },
+      error: (err) => {
+        console.error('Error al crear colaborador:', err);
+        this.isLoading = false;
+        
+        // Capturar el mensaje de error del backend
+        if (err.error && err.error.message) {
+          this.errorModal = err.error.message;
+        } else {
+          this.errorModal = 'Error al guardar el colaborador. Por favor intente nuevamente.';
+        }
+        
+        this.cdr.detectChanges();
+        
+        // Scroll al inicio del modal para ver el error
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }
+    });
+  }
 
   onPaisChange() {
 

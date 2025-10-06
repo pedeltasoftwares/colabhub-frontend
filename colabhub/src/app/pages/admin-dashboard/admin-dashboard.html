@@ -58,13 +58,19 @@
 
         <!-- FILTRO DE BÚSQUEDA -->
         <div class="search-box">
+            <select [(ngModel)]="tipoBusqueda" class="search-type-select">
+                <option value="id">Buscar por ID</option>
+                <option value="nombre">Buscar por Nombre</option>
+            </select>
+            
             <input 
                 type="text" 
-                [(ngModel)]="filtroId" 
-                placeholder="Buscar por ID del colaborador"
+                [(ngModel)]="valorBusqueda" 
+                [placeholder]="tipoBusqueda === 'id' ? 'Ej: 123456' : 'Ej: AND para ANDRES'"
                 class="search-input"
-                (keyup.enter)="buscarPorId()">
-            <button (click)="buscarPorId()" class="btn-search">Buscar</button>
+                (keyup.enter)="buscar()">
+            
+            <button (click)="buscar()" class="btn-search">Buscar</button>
             <button (click)="limpiarFiltro()" class="btn-clear">Limpiar</button>
             <div class="spacer"></div>
             <button (click)="abrirFormularioNuevoColaborador()" class="btn-add">Añadir nuevo colaborador</button>
@@ -177,6 +183,11 @@
           <div *ngIf="errorModal" class="error-message-modal">
             {{ errorModal }}
           </div>
+          <!-- MENSAJE DE ÉXITO DENTRO DEL MODAL -->
+          <div *ngIf="mensajeExito" class="success-message-modal">
+            {{ mensajeExito }}
+          </div>
+
           <form>
             <!-- Sección: Información Personal -->
             <div class="form-section">
