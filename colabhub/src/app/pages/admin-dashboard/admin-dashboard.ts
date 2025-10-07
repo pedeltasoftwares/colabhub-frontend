@@ -39,6 +39,11 @@ export class AdminDashboard implements OnInit {
   // Listas filtradas para cascada
   estadosFiltrados: any[] = [];
   ciudadesFiltradas: any[] = [];
+
+  //Mostrar modal de edición de colaborador
+  mostrarModalEditar: boolean = false;
+  colaboradorEditando: any = {}
+  idOriginalEditando: number = 0;
   
 
   constructor(
@@ -412,6 +417,11 @@ export class AdminDashboard implements OnInit {
         this.mensajeExito = response.message || 'Colaborador guardado exitosamente';
         this.cdr.detectChanges();
 
+         const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+
         setTimeout(() => {
           this.cerrarModal();
           this.cargarColaboradores(); 
@@ -606,5 +616,225 @@ export class AdminDashboard implements OnInit {
 
     alert(`Reporte generado exitosamente: ${colaboradoresAExportar.length} colaboradores exportados`);
   }
+
+  abrirModalEditar(colaborador: ColaboradorActivo){
+
+    this.mostrarModalEditar = true;
+    this.idOriginalEditando = colaborador.ID
+
+    // Clonar el objeto para no modificar el original hasta guardar
+    this.colaboradorEditando = {
+      ID: colaborador.ID,
+      TipoID: colaborador.TipoID,
+      PrimerNombre: colaborador.PrimerNombre,
+      SegundoNombre: colaborador.SegundoNombre || '',
+      PrimerApellido: colaborador.PrimerApellido,
+      SegundoApellido: colaborador.SegundoApellido || '',
+      Email: colaborador.Email,
+      FechaIngreso: colaborador.FechaIngreso,
+      Cargo: colaborador.Cargo,
+      Area: colaborador.Area,
+      Perfil: colaborador.Perfil,
+      IdSede: colaborador.IdSede,
+      UltimoExamenOcupacional: colaborador.UltimoExamenOcupacional || '',
+      FechaNacimiento: colaborador.FechaNacimiento,
+      Edad: colaborador.Edad,
+      Genero: colaborador.Genero,
+      IDPaisNac: colaborador.IDPaisNac,
+      IDEstadoNac: colaborador.IDEstadoNac,
+      IDCiudadNac: colaborador.IDCiudadNac,
+      DireccionResidencia: colaborador.DireccionResidencia,
+      ARL: colaborador.ARL,
+      EPS: colaborador.EPS,
+      AFP: colaborador.AFP,
+      ACCAI: colaborador.ACCAI,
+      Cesantias: colaborador.Cesantias,
+      CajaCompensacion: colaborador.CajaCompensacion,
+      Celular: colaborador.Celular || '',
+      RH: colaborador.RH,
+      ContactoEmergencia: colaborador.ContactoEmergencia || '',
+      CelularContactoEmergencia: colaborador.CelularContactoEmergencia || ''
+    };
+
+    // Cargar estados y ciudades según el país seleccionado
+    if (this.colaboradorEditando.IDPaisNac) {
+      this.estadosFiltrados = this.catalogos.estados?.filter(
+        (estado: any) => estado.ISO2 === this.colaboradorEditando.IDPaisNac
+      ) || [];
+      
+      console.log('Estados filtrados:', this.estadosFiltrados);
+      console.log('Estado del colaborador:', this.colaboradorEditando.IDEstadoNac);
+    }
+
+    // Luego cargar las ciudades del estado
+    if (this.colaboradorEditando.IDEstadoNac) {
+      this.ciudadesFiltradas = this.catalogos.ciudades?.filter(
+        (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorEditando.IDEstadoNac
+      ) || [];
+      
+      console.log('Ciudades filtradas:', this.ciudadesFiltradas);
+      console.log('Ciudad del colaborador:', this.colaboradorEditando.IDCiudadNac);
+    }
+
+  }
+
+  cerrarModalEditar() {
+    this.mostrarModalEditar = false;
+    this.colaboradorEditando = {};
+    this.idOriginalEditando = 0;
+    this.errorModal = null;
+    this.mensajeExito = null;
+    this.estadosFiltrados = [];
+    this.ciudadesFiltradas = [];
+  }
+
+  onEstadoChangeEditar() {
+    if (this.colaboradorEditando.IDEstadoNac) {
+      this.ciudadesFiltradas = this.catalogos.ciudades?.filter(
+        (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorEditando.IDEstadoNac
+      ) || [];
+    } else {
+      this.ciudadesFiltradas = [];
+    }
+  }
+
+  calcularEdadEditar() {
+    if (!this.colaboradorEditando.FechaNacimiento) {
+      this.colaboradorEditando.Edad = null;
+      return;
+    }
+
+    const fechaNacimiento = new Date(this.colaboradorEditando.FechaNacimiento);
+    const hoy = new Date();
+    
+    let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+    const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+    
+    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+      edad--;
+    }
+    
+    this.colaboradorEditando.Edad = edad;
+  }
+
+  actualizarColaborador() { 
+
+    // SOLO validar formatos (no campos obligatorios)
+    const errorFormato = this.validarFormato();
+    if (errorFormato) {
+      this.errorModal = errorFormato;
+      this.cdr.detectChanges();
+      
+      const modalBody = document.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+      return;
+    }
+
+    // Preparar datos para enviar (enviar todos los campos)
+    const body = {
+      PrimerNombre: this.colaboradorEditando.PrimerNombre || null,
+      SegundoNombre: this.colaboradorEditando.SegundoNombre || null,
+      PrimerApellido: this.colaboradorEditando.PrimerApellido || null,
+      SegundoApellido: this.colaboradorEditando.SegundoApellido || null,
+      Email: this.colaboradorEditando.Email || null,
+      FechaNacimiento: this.colaboradorEditando.FechaNacimiento || null,
+      Genero: this.colaboradorEditando.Genero ? Number(this.colaboradorEditando.Genero) : null,
+      IDPaisNac: this.colaboradorEditando.IDPaisNac || null,
+      IDEstadoNac: this.colaboradorEditando.IDEstadoNac || null,
+      IDCiudadNac: this.colaboradorEditando.IDCiudadNac || null,
+      DireccionResidencia: this.colaboradorEditando.DireccionResidencia || null,
+      FechaIngreso: this.colaboradorEditando.FechaIngreso || null,
+      Cargo: this.colaboradorEditando.Cargo ? Number(this.colaboradorEditando.Cargo) : null,
+      Area: this.colaboradorEditando.Area ? Number(this.colaboradorEditando.Area) : null,
+      Perfil: this.colaboradorEditando.Perfil ? Number(this.colaboradorEditando.Perfil) : null,
+      IdSede: this.colaboradorEditando.IdSede ? Number(this.colaboradorEditando.IdSede) : null,
+      UltimoExamenOcupacional: this.colaboradorEditando.UltimoExamenOcupacional || null,
+      ARL: this.colaboradorEditando.ARL ? Number(this.colaboradorEditando.ARL) : null,
+      EPS: this.colaboradorEditando.EPS ? Number(this.colaboradorEditando.EPS) : null,
+      AFP: this.colaboradorEditando.AFP ? Number(this.colaboradorEditando.AFP) : null,
+      ACCAI: this.colaboradorEditando.ACCAI ? Number(this.colaboradorEditando.ACCAI) : null,
+      Cesantias: this.colaboradorEditando.Cesantias ? Number(this.colaboradorEditando.Cesantias) : null,
+      CajaCompensacion: this.colaboradorEditando.CajaCompensacion ? Number(this.colaboradorEditando.CajaCompensacion) : null,
+      Celular: this.colaboradorEditando.Celular || null,
+      RH: this.colaboradorEditando.RH ? Number(this.colaboradorEditando.RH) : null,
+      ContactoEmergencia: this.colaboradorEditando.ContactoEmergencia || null,
+      CelularContactoEmergencia: this.colaboradorEditando.CelularContactoEmergencia || null
+    };
+
+    console.log('Actualizando colaborador:', body);
+
+    this.isLoading = true;
+    this.errorModal = null;
+    this.mensajeExito = null;
+
+    this.colaboradoresService.actualizarColaborador(this.idOriginalEditando, body).subscribe({
+      next: (response) => {
+        console.log('Colaborador actualizado exitosamente:', response);
+        this.isLoading = false;
+        this.mensajeExito = response.message || 'Colaborador actualizado exitosamente';
+        this.cdr.detectChanges();
+
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+
+        setTimeout(() => {
+          this.cerrarModalEditar();
+          this.cargarColaboradores();
+        }, 2000);
+      },
+      error: (err) => {
+        console.error('Error al actualizar colaborador:', err);
+        this.isLoading = false;
+        
+        if (err.error && err.error.message) {
+          this.errorModal = err.error.message;
+        } else {
+          this.errorModal = 'Error al actualizar el colaborador. Por favor intente nuevamente.';
+        }
+        
+        this.cdr.detectChanges();
+        
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }
+      });
+  }
+
+  onCambioPaisManualEditar() {
+  // Limpiar dependencias solo si cambia manualmente
+  this.colaboradorEditando.IDEstadoNac = '';
+  this.colaboradorEditando.IDCiudadNac = '';
+  this.ciudadesFiltradas = [];
+  
+  // Cargar estados del nuevo país
+  if (this.colaboradorEditando.IDPaisNac) {
+    this.estadosFiltrados = this.catalogos.estados?.filter(
+      (estado: any) => estado.ISO2 === this.colaboradorEditando.IDPaisNac
+    ) || [];
+  } else {
+    this.estadosFiltrados = [];
+  }
+}
+
+onCambioEstadoManualEditar() {
+  // Limpiar ciudad solo si cambia manualmente
+  this.colaboradorEditando.IDCiudadNac = '';
+  
+  // Cargar ciudades del nuevo estado
+  if (this.colaboradorEditando.IDEstadoNac) {
+    this.ciudadesFiltradas = this.catalogos.ciudades?.filter(
+      (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorEditando.IDEstadoNac
+    ) || [];
+  } else {
+    this.ciudadesFiltradas = [];
+  }
+}
+
 }
 

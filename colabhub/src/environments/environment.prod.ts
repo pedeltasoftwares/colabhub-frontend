@@ -1,5 +1,5 @@
 // environment.prod.ts (PROD)
 export const environment = {
   production: true,
-  apiUrl: 'https://api.colabhub.com'
+  apiUrl: 'https://backend-colabhub-prod-fafsdzepaghxakhe.canadacentral-01.azurewebsites.net'
 };

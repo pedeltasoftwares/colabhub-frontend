@@ -189,7 +189,7 @@
               <td>{{ getNombreRH(colaborador.RH) }}</td>
               <td>{{ colaborador.ContactoEmergencia }}</td>
               <td>{{ colaborador.CelularContactoEmergencia }}</td>
-              <td><a href="#" class="action-link">✏️</a></td>
+              <td><a (click)="abrirModalEditar(colaborador)" class="action-link" style="cursor: pointer;">✏️</a></td>
               <td><a href="#" class="action-link">🗑️</a></td>
               <td><a href="#" class="action-link">✅</a></td>
             </tr>
@@ -528,6 +528,317 @@
         <div class="modal-footer">
           <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
           <button type="button" class="btn-save" (click)="guardarColaborador()">Guardar Colaborador</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- MODAL EDITAR COLABORADOR -->
+    <div class="modal-overlay" *ngIf="mostrarModalEditar" (click)="cerrarModalEditar()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Editar colaborador: {{ colaboradorEditando.PrimerNombre }} {{ colaboradorEditando.PrimerApellido }}</h2>
+          <button class="modal-close" (click)="cerrarModalEditar()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div *ngIf="errorModal" class="error-message-modal">
+            {{ errorModal }}
+          </div>
+          <div *ngIf="mensajeExito" class="success-message-modal">
+            {{ mensajeExito }}
+          </div>
+
+          <form>
+            <!-- Sección: Información Personal -->
+            <div class="form-section">
+              <h3 class="form-section-title">Información Personal</h3>
+                     
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Primer Nombre *</label>
+                  <input type="text" [(ngModel)]="colaboradorEditando.PrimerNombre" name="PrimerNombreEdit" required>
+                </div>
+                
+                <div class="form-group">
+                  <label>Segundo Nombre</label>
+                  <input type="text" [(ngModel)]="colaboradorEditando.SegundoNombre" name="SegundoNombreEdit">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Primer Apellido *</label>
+                  <input type="text" [(ngModel)]="colaboradorEditando.PrimerApellido" name="PrimerApellidoEdit" required>
+                </div>
+                
+                <div class="form-group">
+                  <label>Segundo Apellido</label>
+                  <input type="text" [(ngModel)]="colaboradorEditando.SegundoApellido" name="SegundoApellidoEdit">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Email *</label>
+                  <input type="email" [(ngModel)]="colaboradorEditando.Email" name="EmailEdit" required>
+                </div>
+                
+                <div class="form-group">
+                  <label>Celular </label>
+                  <input type="tel" [(ngModel)]="colaboradorEditando.Celular" name="CelularEdit" required>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Fecha de Nacimiento *</label>
+                  <input type="date" 
+                    [(ngModel)]="colaboradorEditando.FechaNacimiento" 
+                    name="FechaNacimientoEdit" 
+                    (change)="calcularEdadEditar()"
+                    required>
+                </div>
+                
+                <div class="form-group">
+                  <label>Edad</label>
+                  <input type="number" 
+                    [(ngModel)]="colaboradorEditando.Edad" 
+                    name="EdadEdit" 
+                    readonly>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Género *</label>
+                  <select [(ngModel)]="colaboradorEditando.Genero" name="GeneroEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let genero of catalogos.genero" [value]="genero.ID">
+                      {{ genero.Genero }}
+                    </option>
+                  </select>
+                </div>
+
+                
+                <div class="form-group">
+                  <label>RH *</label>
+                  <select [(ngModel)]="colaboradorEditando.RH" name="RHEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let rh of catalogos.rh" [value]="rh.ID">
+                      {{ rh.NombRH }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Lugar de Nacimiento -->
+            <div class="form-section">
+              <h3 class="form-section-title">Lugar de Nacimiento</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>País de Nacimiento *</label>
+                  <select [(ngModel)]="colaboradorEditando.IDPaisNac" 
+                          name="IDPaisNacEdit" 
+                          (change)="onCambioPaisManualEditar()" 
+                          required>
+                    <option value="">Seleccione...</option>
+                    <option *ngFor="let pais of catalogos.paises" [value]="pais.ISO2">
+                      {{ pais.Nombre }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Estado/Departamento de Nacimiento *</label>
+                  <select [(ngModel)]="colaboradorEditando.IDEstadoNac" 
+                        name="IDEstadoNacEdit" 
+                        (change)="onCambioEstadoManualEditar()" 
+                        required>
+                    <option value="">Seleccione primero un país...</option>
+                    <option *ngFor="let estado of estadosFiltrados" [value]="estado.CodigoISO">
+                      {{ estado.Nombre }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Ciudad de Nacimiento *</label>
+                  <select [(ngModel)]="colaboradorEditando.IDCiudadNac" 
+                          name="IDCiudadNacEdit" 
+                          required>
+                    <option value="">Seleccione primero un estado...</option>
+                    <option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad.CodigoMunicipalNacional">
+                      {{ ciudad.Nombre }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Dirección de Residencia *</label>
+                  <input type="text" [(ngModel)]="colaboradorEditando.DireccionResidencia" name="DireccionResidenciaEdit" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Información Laboral -->
+            <div class="form-section">
+              <h3 class="form-section-title">Información Laboral</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Fecha de Ingreso *</label>
+                  <input type="date" [(ngModel)]="colaboradorEditando.FechaIngreso" name="FechaIngresoEdit" required>
+                </div>
+                
+                <div class="form-group">
+                  <label>Cargo *</label>
+                  <select [(ngModel)]="colaboradorEditando.Cargo" name="CargoEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let cargo of catalogos.cargo" [value]="cargo.ID">
+                      {{ cargo.NombCargo }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Área *</label>
+                  <select [(ngModel)]="colaboradorEditando.Area" name="AreaEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let area of catalogos.area" [value]="area.ID">
+                      {{ area.NombArea }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Perfil </label>
+                  <select [(ngModel)]="colaboradorEditando.Perfil" name="PerfilEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let perfil of catalogos.perfil" [value]="perfil.ID">
+                      {{ perfil.Perfil }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Sede *</label>
+                  <select [(ngModel)]="colaboradorEditando.IdSede" name="IdSedeEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let sede of catalogos.sede" [value]="sede.IdMun">
+                      {{ sede.NombMun }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Último Examen Ocupacional</label>
+                  <input type="date" [(ngModel)]="colaboradorEditando.UltimoExamenOcupacional" name="UltimoExamenOcupacionalEdit">
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Seguridad Social -->
+            <div class="form-section">
+              <h3 class="form-section-title">Seguridad Social</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>ARL *</label>
+                  <select [(ngModel)]="colaboradorEditando.ARL" name="ARLEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let arl of catalogos.arl" [value]="arl.ID">
+                      {{ arl.NombreARL }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>EPS *</label>
+                  <select [(ngModel)]="colaboradorEditando.EPS" name="EPSEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let eps of catalogos.eps" [value]="eps.ID">
+                      {{ eps.NombreEPS }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>AFP *</label>
+                  <select [(ngModel)]="colaboradorEditando.AFP" name="AFPEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let afp of catalogos.afp" [value]="afp.ID">
+                      {{ afp.NombreAFP }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>ACCAI</label>
+                  <select [(ngModel)]="colaboradorEditando.ACCAI" name="ACCAIEdit">
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let accai of catalogos.accai" [value]="accai.ID">
+                      {{ accai.NombreACCAI }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Cesantías *</label>
+                  <select [(ngModel)]="colaboradorEditando.Cesantias" name="CesantiasEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let cesantia of catalogos.cesantias" [value]="cesantia.ID">
+                      {{ cesantia.NombreCesantias }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label>Caja de Compensación *</label>
+                  <select [(ngModel)]="colaboradorEditando.CajaCompensacion" name="CajaCompensacionEdit" required>
+                    <option value="null">Seleccione...</option>
+                    <option *ngFor="let caja of catalogos.cajaCompensacion" [value]="caja.ID">
+                      {{ caja.NombreCaja }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Contacto de Emergencia -->
+            <div class="form-section">
+              <h3 class="form-section-title">Contacto de Emergencia</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Nombre Contacto de Emergencia </label>
+                  <input type="text" [(ngModel)]="colaboradorEditando.ContactoEmergencia" name="ContactoEmergenciaEdit" required>
+                </div>
+                
+                <div class="form-group">
+                  <label>Celular Contacto de Emergencia </label>
+                  <input type="tel" [(ngModel)]="colaboradorEditando.CelularContactoEmergencia" name="CelularContactoEmergenciaEdit" required>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="cerrarModalEditar()">Cancelar</button>
+            <button type="button" class="btn-save" (click)="actualizarColaborador()">Guardar Cambios</button>
+          </div>
         </div>
       </div>
     </div>

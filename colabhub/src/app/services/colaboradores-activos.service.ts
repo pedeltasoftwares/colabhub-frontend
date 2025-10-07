@@ -35,4 +35,9 @@ export class ColaboradoresActivosService {
     return this.http.post(`${this.apiUrl}/create`, colaborador);
   }
 
+  //Editar colaborador
+  actualizarColaborador(id: number, colaborador: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/update`, colaborador);
+  }
+
 }
