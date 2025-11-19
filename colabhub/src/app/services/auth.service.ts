@@ -29,6 +29,7 @@ export class AuthService {
         this.storageService.saveUser(response.user);
       })
     );
+    console.log(`URL DEL BACK:${this.apiUrl}`)
   }
 
   //Set password
