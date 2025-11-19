@@ -2,7 +2,9 @@ import { Component, OnInit , ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ColaboradoresActivosService } from '../../services/colaboradores-activos.service';
+import { ColaboradoresRetiradosService } from '../../services/colaboradores-retirados.service';
 import { ColaboradorActivo } from '../../models/colaboradores-activos.models';
+import { ColaboradorRetirado } from '../../models/colaboradores-retirados.models';
 import { CatalogosService } from '../../services/catalogos.service';
 import { StorageService } from '../../services/storage';
 import * as XLSX from 'xlsx'; //
@@ -17,6 +19,8 @@ import * as XLSX from 'xlsx'; //
 export class AdminDashboard implements OnInit {
   
   colaboradores: ColaboradorActivo[] = [];
+  colaboradoresRetirados: ColaboradorRetirado[] = []; //
+  vistaActual: string = 'activos';
   tipoBusqueda: string = 'id'; 
   valorBusqueda: string = ''; 
   isLoading: boolean = false;
@@ -44,13 +48,19 @@ export class AdminDashboard implements OnInit {
   mostrarModalEditar: boolean = false;
   colaboradorEditando: any = {}
   idOriginalEditando: number = 0;
+
+  //Mostrar modal de retirar colaborador
+  mostrarModalRetirar: boolean = false;
+  colaboradorARetirar: ColaboradorActivo | null = null;
+  motivoRetiroSeleccionado: number | null = null;
   
 
   constructor(
     private colaboradoresService: ColaboradoresActivosService,
     private catalogosService: CatalogosService,
     private storageService: StorageService,
-    private cdr: ChangeDetectorRef 
+    private cdr: ChangeDetectorRef,
+    private colaboradoresRetiradosService: ColaboradoresRetiradosService
   ) {}
 
   ngOnInit() {
@@ -76,6 +86,13 @@ export class AdminDashboard implements OnInit {
         console.error('Error catálogos:', err);
       }
     });
+  }
+
+  cambiarVista(vista: string) {
+    this.vistaActual = vista;
+    if (vista === 'retirados') {
+      this.cargarColaboradoresRetirados();
+    }
   }
 
   cargarColaboradores() {
@@ -202,12 +219,18 @@ export class AdminDashboard implements OnInit {
     return catalogo?.Perfil || id.toString();
   }
 
-    getNombreEstado(codigoISO: string | null): string {
+  getNombreEstado(codigoISO: string | null): string {
     if (!codigoISO) return '-';
     const catalogo = this.catalogos.estados?.find((item: any) => item.CodigoISO === codigoISO);
     return catalogo?.Nombre || codigoISO;
   }
 
+  getNombreMotivoRetiro(id: number | null): string {
+    if (!id) return '-';
+    const catalogo = this.catalogos.motivoRetiro?.find((item: any) => item.ID === id);
+    return catalogo?.Motivo || id.toString();
+  }
+  
   getNombreCiudad(codigoMunicipal: string | null): string {
     if (!codigoMunicipal) return '-';
     const catalogo = this.catalogos.ciudades?.find((item: any) => item.CodigoMunicipalNacional === codigoMunicipal);
@@ -820,21 +843,127 @@ export class AdminDashboard implements OnInit {
   } else {
     this.estadosFiltrados = [];
   }
-}
-
-onCambioEstadoManualEditar() {
-  // Limpiar ciudad solo si cambia manualmente
-  this.colaboradorEditando.IDCiudadNac = '';
-  
-  // Cargar ciudades del nuevo estado
-  if (this.colaboradorEditando.IDEstadoNac) {
-    this.ciudadesFiltradas = this.catalogos.ciudades?.filter(
-      (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorEditando.IDEstadoNac
-    ) || [];
-  } else {
-    this.ciudadesFiltradas = [];
   }
-}
+
+  onCambioEstadoManualEditar() {
+    // Limpiar ciudad solo si cambia manualmente
+    this.colaboradorEditando.IDCiudadNac = '';
+    
+    // Cargar ciudades del nuevo estado
+    if (this.colaboradorEditando.IDEstadoNac) {
+      this.ciudadesFiltradas = this.catalogos.ciudades?.filter(
+        (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorEditando.IDEstadoNac
+      ) || [];
+    } else {
+      this.ciudadesFiltradas = [];
+    }
+  }
+
+  abrirModalRetirar(colaborador: ColaboradorActivo) {
+    this.colaboradorARetirar = colaborador;
+    this.motivoRetiroSeleccionado = null;
+    this.mostrarModalRetirar = true;
+    this.errorModal = null;
+    this.mensajeExito = null;
+  }
+
+  cerrarModalRetirar() {
+    this.mostrarModalRetirar = false;
+    this.colaboradorARetirar = null;
+    this.motivoRetiroSeleccionado = null;
+    this.errorModal = null;
+    this.mensajeExito = null;
+  }
+
+  retirarColaborador(colaborador: ColaboradorActivo) {
+    this.abrirModalRetirar(colaborador);
+  }
+
+  confirmarRetiro() {
+    if (!this.colaboradorARetirar) return;
+
+    // Validar que se haya seleccionado un motivo
+    if (!this.motivoRetiroSeleccionado) {
+      this.errorModal = 'Por favor seleccione un motivo de retiro';
+      this.cdr.detectChanges();
+      
+      const modalBody = document.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.scrollTop = 0;
+      }
+      return;
+    }
+
+    // Preparar el body con el motivo de retiro
+    const body = {
+      motivoRetiro: this.motivoRetiroSeleccionado
+    };
+
+    console.log('Retirando colaborador ID:', this.colaboradorARetirar.ID, 'Motivo:', this.motivoRetiroSeleccionado);
+
+    this.isLoading = true;
+    this.errorModal = null;
+
+    this.colaboradoresService.retirarColaborador(this.colaboradorARetirar.ID, body).subscribe({
+      next: (response) => {
+        console.log('Colaborador retirado exitosamente:', response);
+        this.isLoading = false;
+        this.mensajeExito = response.message || 'Colaborador retirado exitosamente';
+        this.cdr.detectChanges();
+
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+
+        setTimeout(() => {
+          this.cerrarModalRetirar();
+          this.cargarColaboradores();
+        }, 2000);
+      },
+      error: (err) => {
+        console.error('Error al retirar colaborador:', err);
+        this.isLoading = false;
+        
+        if (err.error && err.error.message) {
+          this.errorModal = err.error.message;
+        } else {
+          this.errorModal = 'Error al retirar el colaborador. Por favor intente nuevamente.';
+        }
+        
+        this.cdr.detectChanges();
+        
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }
+    });
+  }
+
+  cargarColaboradoresRetirados() {
+    this.isLoading = true;
+    
+    this.colaboradoresRetiradosService.getColaboradoresRetirados().subscribe({
+      next: (response) => {
+        console.log('Colaboradores retirados cargados:', response);
+        this.colaboradoresRetirados = response.sort((a, b) => {
+          const nombreComparacion = a.PrimerNombre.localeCompare(b.PrimerNombre);
+          if (nombreComparacion === 0) {
+            return a.PrimerApellido.localeCompare(b.PrimerApellido);
+          }
+          return nombreComparacion;
+        });
+        
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.error = 'Error al cargar colaboradores retirados';
+        this.isLoading = false;
+        console.error('Error:', err);
+      }
+    });
+  }
 
 }
 

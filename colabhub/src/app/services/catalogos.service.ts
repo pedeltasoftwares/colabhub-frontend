@@ -19,7 +19,8 @@ import {
   CatalogoPerfil,
   Pais,
   Estado,
-  Ciudad
+  Ciudad,
+  CatalogoMotivoRetiro
 } from '../models/catalogos.models'
 
 @Injectable({
@@ -51,7 +52,8 @@ export class CatalogosService  {
       perfil: this.http.get<CatalogoPerfil[]>(`${this.apiUrl}/PerfilesCargos`),
       paises: this.http.get<Pais[]>(`${this.apiUrl}/Paises`),
       estados: this.http.get<Estado[]>(`${this.apiUrl}/Estados`),     
-      ciudades: this.http.get<Ciudad[]>(`${this.apiUrl}/Ciudades`) 
+      ciudades: this.http.get<Ciudad[]>(`${this.apiUrl}/Ciudades`),
+      motivoRetiro: this.http.get<CatalogoMotivoRetiro[]>(`${this.apiUrl}/MotivoRetiro`)
     })
   }
 
