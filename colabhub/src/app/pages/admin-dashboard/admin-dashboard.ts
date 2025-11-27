@@ -54,6 +54,13 @@ export class AdminDashboard implements OnInit {
   colaboradorARetirar: ColaboradorActivo | null = null;
   motivoRetiroSeleccionado: number | null = null;
   
+  // Modal de reintegración
+  mostrarModalReintegrar: boolean = false;
+  colaboradorReintegrando: any = null;
+
+  // Listas filtradas para cascada (reintegrar)
+  estadosFiltradosReintegrar: any[] = [];
+  ciudadesFiltradasReintegrar: any[] = [];
 
   constructor(
     private colaboradoresService: ColaboradoresActivosService,
@@ -67,6 +74,14 @@ export class AdminDashboard implements OnInit {
     this.currentUser = this.storageService.getUser();
     console.log('Usuario actual:', this.currentUser);
     this.cargarCatalogos();
+  }
+
+  cerrarSesion() {
+    // Limpiar el storage
+    this.storageService.clear();
+    
+    // Redirigir al login
+    window.location.href = '/login';
   }
 
   cargarCatalogos() {
@@ -448,7 +463,7 @@ export class AdminDashboard implements OnInit {
         setTimeout(() => {
           this.cerrarModal();
           this.cargarColaboradores(); 
-        }, 2000);
+        }, 1000);
       },
       error: (err) => {
         console.error('Error al crear colaborador:', err);
@@ -919,6 +934,7 @@ export class AdminDashboard implements OnInit {
         setTimeout(() => {
           this.cerrarModalRetirar();
           this.cargarColaboradores();
+          this.limpiarFiltro();
         }, 2000);
       },
       error: (err) => {
@@ -964,6 +980,189 @@ export class AdminDashboard implements OnInit {
       }
     });
   }
+
+  // ==================== MODAL REINTEGRAR ====================
+  abrirModalReintegrar(colaborador: any)  {
+    this.mostrarModalReintegrar = true;
+
+    // Clonar el objeto para no modificar el original hasta guardar
+    this.colaboradorReintegrando = {
+      ID: colaborador.ID,
+      TipoID: colaborador.TipoID,
+      PrimerNombre: colaborador.PrimerNombre,
+      SegundoNombre: colaborador.SegundoNombre || '',
+      PrimerApellido: colaborador.PrimerApellido,
+      SegundoApellido: colaborador.SegundoApellido || '',
+      Email: colaborador.Email,
+      FechaIngreso: colaborador.FechaIngreso,
+      Cargo: colaborador.Cargo,
+      Area: colaborador.Area,
+      FechaNacimiento: colaborador.FechaNacimiento,
+      Edad: colaborador.Edad,
+      Genero: colaborador.Genero,
+      DireccionResidencia: colaborador.DireccionResidencia || '',
+      ARL: colaborador.ARL,
+      EPS: colaborador.EPS,
+      AFP: colaborador.AFP,
+      ACCAI: colaborador.ACCAI,
+      Cesantias: colaborador.Cesantias,
+      CajaCompensacion: colaborador.CajaCompensacion,
+      Celular: colaborador.Celular || '',
+      RH: colaborador.RH,
+      ContactoEmergencia: colaborador.ContactoEmergencia || '',
+      CelularContactoEmergencia: colaborador.CelularContactoEmergencia || '',
+      IdSede: colaborador.IdSede,
+      IDPaisNac: colaborador.IDPaisNac || '',
+      IDEstadoNac: colaborador.IDEstadoNac || '',
+      IDCiudadNac: colaborador.IDCiudadNac || '',
+      UltimoExamenOcupacional: colaborador.UltimoExamenOcupacional || '',
+      Perfil: colaborador.Perfil
+    };
+
+    // Cargar filtros en cascada si ya hay datos
+    if (this.colaboradorReintegrando.IDPaisNac) {
+      this.estadosFiltradosReintegrar = this.catalogos.estados?.filter(
+        (estado: any) => estado.ISO2 === this.colaboradorReintegrando.IDPaisNac
+      ) || [];
+    }
+
+    if (this.colaboradorReintegrando.IDEstadoNac) {
+      this.ciudadesFiltradasReintegrar = this.catalogos.ciudades?.filter(
+        (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorReintegrando.IDEstadoNac
+      ) || [];
+    }
+
+    this.errorModal = null;
+    this.mensajeExito = null;
+  }
+
+  cerrarModalReintegrar() {
+    this.mostrarModalReintegrar = false;
+    this.colaboradorReintegrando = null;
+    this.estadosFiltradosReintegrar = [];
+    this.ciudadesFiltradasReintegrar = [];
+    this.errorModal = null;
+    this.mensajeExito = null;
+  }
+
+  calcularEdadReintegrar() {
+    if (this.colaboradorReintegrando.FechaNacimiento) {
+      const hoy = new Date();
+      const fechaNac = new Date(this.colaboradorReintegrando.FechaNacimiento);
+      let edad = hoy.getFullYear() - fechaNac.getFullYear();
+      const mes = hoy.getMonth() - fechaNac.getMonth();
+      
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+        edad--;
+      }
+      
+      this.colaboradorReintegrando.Edad = edad;
+    }
+  }
+
+  onCambioPaisManualReintegrar() {
+    // Limpiar dependencias solo si cambia manualmente
+    this.colaboradorReintegrando.IDEstadoNac = '';
+    this.colaboradorReintegrando.IDCiudadNac = '';
+    this.ciudadesFiltradasReintegrar = [];
+    
+    // Cargar estados del nuevo país
+    if (this.colaboradorReintegrando.IDPaisNac) {
+      this.estadosFiltradosReintegrar = this.catalogos.estados?.filter(
+        (estado: any) => estado.ISO2 === this.colaboradorReintegrando.IDPaisNac
+      ) || [];
+    } else {
+      this.estadosFiltradosReintegrar = [];
+    }
+  }
+
+  onCambioEstadoManualReintegrar() {
+    // Limpiar ciudad solo si cambia manualmente
+    this.colaboradorReintegrando.IDCiudadNac = '';
+    
+    // Cargar ciudades del nuevo estado
+    if (this.colaboradorReintegrando.IDEstadoNac) {
+      this.ciudadesFiltradasReintegrar = this.catalogos.ciudades?.filter(
+        (ciudad: any) => ciudad.CodigoISOEstado === this.colaboradorReintegrando.IDEstadoNac
+      ) || [];
+    } else {
+      this.ciudadesFiltradasReintegrar = [];
+    }
+  }
+
+  confirmarReintegracion() {
+    if (!this.colaboradorReintegrando) return;
+
+    // Preparar el body con todos los campos
+    const body = {
+      TipoID: this.colaboradorReintegrando.TipoID ? Number(this.colaboradorReintegrando.TipoID) : null,
+      PrimerNombre: this.colaboradorReintegrando.PrimerNombre || null,
+      SegundoNombre: this.colaboradorReintegrando.SegundoNombre || null,
+      PrimerApellido: this.colaboradorReintegrando.PrimerApellido || null,
+      SegundoApellido: this.colaboradorReintegrando.SegundoApellido || null,
+      Email: this.colaboradorReintegrando.Email || null,
+      FechaNacimiento: this.colaboradorReintegrando.FechaNacimiento || null,
+      Genero: this.colaboradorReintegrando.Genero ? Number(this.colaboradorReintegrando.Genero) : null,
+      IDPaisNac: this.colaboradorReintegrando.IDPaisNac || null,
+      IDEstadoNac: this.colaboradorReintegrando.IDEstadoNac || null,
+      IDCiudadNac: this.colaboradorReintegrando.IDCiudadNac || null,
+      DireccionResidencia: this.colaboradorReintegrando.DireccionResidencia || null,
+      FechaIngreso: this.colaboradorReintegrando.FechaIngreso || null,
+      Cargo: this.colaboradorReintegrando.Cargo ? Number(this.colaboradorReintegrando.Cargo) : null,
+      Area: this.colaboradorReintegrando.Area ? Number(this.colaboradorReintegrando.Area) : null,
+      Perfil: this.colaboradorReintegrando.Perfil ? Number(this.colaboradorReintegrando.Perfil) : null,
+      IdSede: this.colaboradorReintegrando.IdSede ? Number(this.colaboradorReintegrando.IdSede) : null,
+      UltimoExamenOcupacional: this.colaboradorReintegrando.UltimoExamenOcupacional || null,
+      ARL: this.colaboradorReintegrando.ARL ? Number(this.colaboradorReintegrando.ARL) : null,
+      EPS: this.colaboradorReintegrando.EPS ? Number(this.colaboradorReintegrando.EPS) : null,
+      AFP: this.colaboradorReintegrando.AFP ? Number(this.colaboradorReintegrando.AFP) : null,
+      ACCAI: this.colaboradorReintegrando.ACCAI ? Number(this.colaboradorReintegrando.ACCAI) : null,
+      Cesantias: this.colaboradorReintegrando.Cesantias ? Number(this.colaboradorReintegrando.Cesantias) : null,
+      CajaCompensacion: this.colaboradorReintegrando.CajaCompensacion ? Number(this.colaboradorReintegrando.CajaCompensacion) : null,
+      Celular: this.colaboradorReintegrando.Celular || null,
+      RH: this.colaboradorReintegrando.RH ? Number(this.colaboradorReintegrando.RH) : null,
+      ContactoEmergencia: this.colaboradorReintegrando.ContactoEmergencia || null,
+      CelularContactoEmergencia: this.colaboradorReintegrando.CelularContactoEmergencia || null
+    };
+
+    console.log('Reintegrando colaborador ID:', this.colaboradorReintegrando.ID);
+
+    this.isLoading = true;
+    this.errorModal = null;
+
+    this.colaboradoresRetiradosService.reintegrarColaborador(this.colaboradorReintegrando.ID, body).subscribe({
+      next: (response) => {
+        console.log('Colaborador reintegrado exitosamente:', response);
+        this.isLoading = false;
+        
+        // Cerrar modal INMEDIATAMENTE
+        this.cerrarModalReintegrar();
+        
+        // Refrescar la lista de colaboradores retirados
+        this.cargarColaboradoresRetirados();
+      },
+      error: (err) => {
+        console.error('Error al reintegrar colaborador:', err);
+        this.isLoading = false;
+        
+        if (err.error && err.error.message) {
+          this.errorModal = err.error.message;
+        } else {
+          this.errorModal = 'Error al reintegrar el colaborador. Por favor intente nuevamente.';
+        }
+        
+        this.cdr.detectChanges();
+        
+        const modalBody = document.querySelector('.modal-body');
+        if (modalBody) {
+          modalBody.scrollTop = 0;
+        }
+      }
+    });
+  }
+
+
+  
 
 }
 

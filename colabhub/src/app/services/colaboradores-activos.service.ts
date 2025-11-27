@@ -44,5 +44,4 @@ export class ColaboradoresActivosService {
   retirarColaborador(id: number, colaborador: any): Observable<any>{
     return this.http.post(`${this.apiUrl}/${id}/retirar`, colaborador);
   }
-
 }

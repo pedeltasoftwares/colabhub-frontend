@@ -18,5 +18,10 @@ export class ColaboradoresRetiradosService {
     return this.http.get<ColaboradorRetirado[]>(this.apiUrl);
   }
 
+  // Reintegrar un colaborador retirado
+  reintegrarColaborador(id: number, data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${id}/reintegrar`, data);
+  } 
+
 
 }

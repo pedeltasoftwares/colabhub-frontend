@@ -50,6 +50,11 @@
               <h1 class="greeting">Hola, {{ currentUser?.full_name || 'Usuario' }}</h1>
               <p class="subgreeting">Bienvenido/a</p>
           </div>
+          <div class="header-right">
+            <button (click)="cerrarSesion()" class="btn-logout-header">
+              🚪 Cerrar sesión
+            </button>
+          </div>
       </header>
 
       <!-- CONTENT AREA -->
@@ -364,7 +369,7 @@
                             name="IDCiudadNac" 
                             required>
                       <option value="">Seleccione primero un estado...</option>
-                      <option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad.CodigoMunicipalNacional">
+                      <option *ngFor="let ciudad of ciudadesFiltradasReintegrar" [value]="ciudad.CodigoMunicipalNacional">
                         {{ ciudad.Nombre }}
                       </option>
                     </select>
@@ -905,6 +910,11 @@
           <h1 class="greeting">Hola, {{ currentUser?.full_name || 'Usuario' }}</h1>
           <p class="subgreeting">Bienvenido/a</p>
         </div>
+        <div class="header-right">
+          <button (click)="cerrarSesion()" class="btn-logout-header">
+            🚪 Cerrar sesión
+          </button>
+        </div>
       </header>
 
       <!-- CONTENT AREA -->
@@ -952,6 +962,7 @@
                 <th>Sede</th>
                 <th>Fecha Retiro</th>
                 <th>Motivo Retiro</th>
+                <th>Reintegrar</th>
               </tr>
             </thead>
             <tbody>
@@ -979,14 +990,329 @@
                 <td>{{ getNombreSede(colaborador.IdSede) }}</td>
                 <td>{{ colaborador.FechaRetiro | date:'yyyy-MM-dd' }}</td>
                 <td>{{ getNombreMotivoRetiro(colaborador.MotivoRetiro) }}</td>
+                <td><a (click)="abrirModalReintegrar(colaborador)" class="action-link" style="cursor: pointer;">↩️</a></td>
               </tr>
               <tr *ngIf="colaboradoresRetirados.length === 0">
-                <td colspan="8" class="no-data">No hay colaboradores retirados</td>
+                <td colspan="24" class="no-data">No hay colaboradores retirados</td>
               </tr>
             </tbody>
           </table>
         </div>
       </main>
+
+      <!-- MODAL REINTEGRAR COLABORADOR -->
+      <div class="modal-overlay" *ngIf="mostrarModalReintegrar" (click)="cerrarModalReintegrar()">
+        <div class="modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Reintegrar colaborador: {{ colaboradorReintegrando?.PrimerNombre }} {{ colaboradorReintegrando?.PrimerApellido }}</h2>
+            <button class="modal-close" (click)="cerrarModalReintegrar()">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Mensajes de error o éxito -->
+            <div *ngIf="errorModal" class="error-message-modal">
+              {{ errorModal }}
+            </div>
+
+            <div *ngIf="mensajeExito" class="success-message-modal">
+              {{ mensajeExito }}
+            </div>
+
+            <form>
+              <!-- Sección: Información Personal -->
+              <div class="form-section">
+                <h3 class="form-section-title">Información Personal</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Primer Nombre *</label>
+                    <input type="text" [(ngModel)]="colaboradorReintegrando.PrimerNombre" name="PrimerNombreReint" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Segundo Nombre</label>
+                    <input type="text" [(ngModel)]="colaboradorReintegrando.SegundoNombre" name="SegundoNombreReint">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Primer Apellido *</label>
+                    <input type="text" [(ngModel)]="colaboradorReintegrando.PrimerApellido" name="PrimerApellidoReint" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Segundo Apellido</label>
+                    <input type="text" [(ngModel)]="colaboradorReintegrando.SegundoApellido" name="SegundoApellidoReint">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" [(ngModel)]="colaboradorReintegrando.Email" name="EmailReint" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Celular</label>
+                    <input type="tel" [(ngModel)]="colaboradorReintegrando.Celular" name="CelularReint">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Fecha de Nacimiento *</label>
+                    <input type="date" 
+                      [(ngModel)]="colaboradorReintegrando.FechaNacimiento" 
+                      name="FechaNacimientoReint" 
+                      (change)="calcularEdadReintegrar()"
+                      required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Edad</label>
+                    <input type="number" 
+                      [(ngModel)]="colaboradorReintegrando.Edad" 
+                      name="EdadReint" 
+                      readonly>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Género *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.Genero" name="GeneroReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let genero of catalogos.genero" [value]="genero.ID">
+                        {{ genero.Genero }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>RH *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.RH" name="RHReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let rh of catalogos.rh" [value]="rh.ID">
+                        {{ rh.NombRH }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección: Lugar de Nacimiento -->
+              <div class="form-section">
+                <h3 class="form-section-title">Lugar de Nacimiento</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>País de Nacimiento *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.IDPaisNac" 
+                            name="IDPaisNacReint" 
+                            (change)="onCambioPaisManualReintegrar()" 
+                            required>
+                      <option value="">Seleccione...</option>
+                      <option *ngFor="let pais of catalogos.paises" [value]="pais.ISO2">
+                        {{ pais.Nombre }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Estado/Departamento de Nacimiento *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.IDEstadoNac" 
+                          name="IDEstadoNacReint" 
+                          (change)="onCambioEstadoManualReintegrar()" 
+                          required>
+                      <option value="">Seleccione primero un país...</option>
+                      <option *ngFor="let estado of estadosFiltradosReintegrar" [value]="estado.CodigoISO">
+                        {{ estado.Nombre }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Ciudad de Nacimiento *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.IDCiudadNac" 
+                            name="IDCiudadNacReint" 
+                            required>
+                      <option value="">Seleccione primero un estado...</option>
+                      <option *ngFor="let ciudad of ciudadesFiltradasReintegrar" [value]="ciudad.CodigoMunicipalNacional">
+                        {{ ciudad.Nombre }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Dirección de Residencia *</label>
+                    <input type="text" [(ngModel)]="colaboradorReintegrando.DireccionResidencia" name="DireccionResidenciaReint" required>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección: Información Laboral -->
+              <div class="form-section">
+                <h3 class="form-section-title">Información Laboral</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Fecha de Ingreso *</label>
+                    <input type="date" [(ngModel)]="colaboradorReintegrando.FechaIngreso" name="FechaIngresoReint" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Cargo *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.Cargo" name="CargoReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let cargo of catalogos.cargo" [value]="cargo.ID">
+                        {{ cargo.NombCargo }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Área *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.Area" name="AreaReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let area of catalogos.area" [value]="area.ID">
+                        {{ area.NombArea }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Perfil</label>
+                    <select [(ngModel)]="colaboradorReintegrando.Perfil" name="PerfilReint">
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let perfil of catalogos.perfil" [value]="perfil.ID">
+                        {{ perfil.Perfil }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Sede *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.IdSede" name="IdSedeReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let sede of catalogos.sede" [value]="sede.IdMun">
+                        {{ sede.NombMun }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Último Examen Ocupacional</label>
+                    <input type="date" [(ngModel)]="colaboradorReintegrando.UltimoExamenOcupacional" name="UltimoExamenOcupacionalReint">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección: Seguridad Social -->
+              <div class="form-section">
+                <h3 class="form-section-title">Seguridad Social</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>ARL *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.ARL" name="ARLReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let arl of catalogos.arl" [value]="arl.ID">
+                        {{ arl.NombreARL }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>EPS *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.EPS" name="EPSReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let eps of catalogos.eps" [value]="eps.ID">
+                        {{ eps.NombreEPS }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>AFP *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.AFP" name="AFPReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let afp of catalogos.afp" [value]="afp.ID">
+                        {{ afp.NombreAFP }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>ACCAI</label>
+                    <select [(ngModel)]="colaboradorReintegrando.ACCAI" name="ACCAIReint">
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let accai of catalogos.accai" [value]="accai.ID">
+                        {{ accai.NombreACCAI }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Cesantías *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.Cesantias" name="CesantiasReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let cesantia of catalogos.cesantias" [value]="cesantia.ID">
+                        {{ cesantia.NombreCesantias }}
+                      </option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Caja de Compensación *</label>
+                    <select [(ngModel)]="colaboradorReintegrando.CajaCompensacion" name="CajaCompensacionReint" required>
+                      <option value="null">Seleccione...</option>
+                      <option *ngFor="let caja of catalogos.cajaCompensacion" [value]="caja.ID">
+                        {{ caja.NombreCaja }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección: Contacto de Emergencia -->
+              <div class="form-section">
+                <h3 class="form-section-title">Contacto de Emergencia</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Nombre Contacto de Emergencia</label>
+                    <input type="text" [(ngModel)]="colaboradorReintegrando.ContactoEmergencia" name="ContactoEmergenciaReint">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Celular Contacto de Emergencia</label>
+                    <input type="tel" [(ngModel)]="colaboradorReintegrando.CelularContactoEmergencia" name="CelularContactoEmergenciaReint">
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" (click)="cerrarModalReintegrar()">Cancelar</button>
+              <button type="button" class="btn-save" (click)="confirmarReintegracion()" [disabled]="isLoading">
+                {{ isLoading ? 'Reintegrando...' : 'Reintegrar Colaborador' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </ng-container>
 
   </div>

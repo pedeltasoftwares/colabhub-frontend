@@ -735,3 +735,24 @@
 .table-container-full {
   max-height: calc(100vh - 210px); 
 }
+
+/* Botón de cerrar sesión en header */
+.btn-logout-header {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  color: #5a6c7d;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-logout-header:hover {
+  background-color: #f5f5f5;
+  border-color: #d0d0d0;
+}
