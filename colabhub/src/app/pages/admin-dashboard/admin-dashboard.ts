@@ -77,11 +77,37 @@ export class AdminDashboard implements OnInit {
   }
 
   cerrarSesion() {
-    // Limpiar el storage
-    this.storageService.clear();
+    const token = this.storageService.getToken();
     
-    // Redirigir al login
-    window.location.href = '/login';
+    if (!token) {
+      // Si no hay token, solo limpiar y redirigir
+      this.storageService.clear();
+      window.location.href = '/login';
+      return;
+    }
+
+    // Llamar al endpoint de logout
+    fetch('http://localhost:3000/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(() => {
+      // Limpiar el storage
+      this.storageService.clear();
+      
+      // Redirigir al login
+      window.location.href = '/login';
+    })
+    .catch((error) => {
+      console.error('Error al cerrar sesión:', error);
+      
+      // Aunque falle, limpiar el storage y redirigir
+      this.storageService.clear();
+      window.location.href = '/login';
+    });
   }
 
   cargarCatalogos() {
